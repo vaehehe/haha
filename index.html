@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <title>Document</title>
+  <!-- 导入页面的基本样式 -->
+  <link rel="stylesheet" href="./css/search.css" />
+  <style>
+    .suggest-item {
+      height: 28px;
+      line-height: 28px;
+      font-size: 14px;
+      color: darkgray;
+    }
+  </style>
+  <!-- 导入 jQuery 和 template -->
+  <script src="./lib/jquery.js"></script>
+  <script src="./lib/template-web.js"></script>
+</head>
+
+<body>
+  <div class="container">
+    <!-- Logo -->
+    <img src="./images/taobao_logo.png" alt="" class="logo" />
+
+    <div class="box">
+      <!-- tab 栏 -->
+      <div class="tabs">
+        <div class="tab-active">宝贝</div>
+        <div>店铺</div>
+      </div>
+      <!-- 搜索区域（搜索框和搜索按钮） -->
+      <div class="search-box">
+        <input type="text" class="ipt" placeholder="请输入要搜索的内容" />
+        <button class="btnSearch">
+          搜索
+        </button>
+      </div>
+      <!-- 下面是搜索建议 -->
+      <div id="suggest-list">
+        <!-- 这里放搜索建议 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 设置模板 -->
+  <script type="text/html" id="list">
+    {{each result val}}
+    <div class="suggest-item">{{val[0]}}</div>
+    {{/each}}
+  </script>
+
+  <script>
+    var timer = null;
+
+    // 键盘按下事件
+    $('.ipt').keyup(function () {
+      var text = $(this).val().trim();
+      if (timer != null) {
+        clearTimeout(timer);
+      }
+      if (text == "") {
+        return $("#suggest-list").empty().hide();
+      }
+      //优化从内存中获取
+      if (localStorage.getItem(text)) {
+        $("#suggest-list").html(JSON.parse(localStorage.getItem(text))).show();
+      }
+      //设置防抖
+      timer = setTimeout(function () {
+        getMsg(text);
+      }, 1000);
+    }).on('mouseenter', function () {
+      $(".ipt").keyup();
+    }).on('blur', function () {
+      return $("#suggest-list").empty().hide();
+    });
+
+    function getMsg(text) {
+      $.getJSON('https://suggest.taobao.com/sug?callback=?', { q: text }, function (res) {
+        console.log(res);
+
+        //设置本地存储
+        localStorage.setItem(text, JSON.stringify(res));
+
+        // 调用函数
+        var str = template('list', res);
+        $("#suggest-list").html(str).show();
+      });
+    }
+  </script>
+
+</body>
+
+</html>
